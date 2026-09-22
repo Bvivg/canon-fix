@@ -47,14 +47,20 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.ver.outputs.version }}
+          SHA: ${{ github.sha }}
         run: |
+          skill_version=$(cat skills/canon-mf460-fix/VERSION)
+          {
+            echo "Сборка ${VERSION} из коммита ${SHA}."
+            echo
+            echo "Скилл canon-mf460-fix: версия ${skill_version}."
+            echo
+            echo "Скачайте CanonFix.exe на флешку и запустите на нужном ПК от администратора. Подробности — в README."
+          } > notes.md
           gh release delete latest --cleanup-tag --yes || true
           gh release create latest out/CanonFix.exe \
-            --target "${{ github.sha }}" \
-            --title "CanonFix ${{ steps.ver.outputs.version }}" \
+            --target "${SHA}" \
+            --title "CanonFix ${VERSION}" \
             --latest \
-            --notes "Сборка ${{ steps.ver.outputs.version }} из коммита ${{ github.sha }}.
-
-Скилл: версия $(cat skills/canon-mf460-fix/VERSION).
-
-Скачайте CanonFix.exe на флешку и запустите на нужном ПК от администратора. Подробности — в README."
+            --notes-file notes.md
