@@ -1,0 +1,60 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-latest
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      DOTNET_NOLOGO: 1
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Версия сборки
+        id: ver
+        shell: bash
+        run: echo "version=1.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish (single-file, self-contained, win-x64)
+        run: dotnet publish launcher/CanonFix.csproj -c Release -r win-x64 -p:Version=${{ steps.ver.outputs.version }} -o out
+
+      - name: Самопроверка exe на Windows
+        run: .\out\CanonFix.exe --selftest
+
+      - name: Артефакт
+        uses: actions/upload-artifact@v4
+        with:
+          name: CanonFix-${{ steps.ver.outputs.version }}
+          path: out/CanonFix.exe
+
+      - name: Release "latest"
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --cleanup-tag --yes || true
+          gh release create latest out/CanonFix.exe \
+            --target "${{ github.sha }}" \
+            --title "CanonFix ${{ steps.ver.outputs.version }}" \
+            --latest \
+            --notes "Сборка ${{ steps.ver.outputs.version }} из коммита ${{ github.sha }}.
+
+Скилл: версия $(cat skills/canon-mf460-fix/VERSION).
+
+Скачайте CanonFix.exe на флешку и запустите на нужном ПК от администратора. Подробности — в README."

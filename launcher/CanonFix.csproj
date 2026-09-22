@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>CanonFix</AssemblyName>
+    <RootNamespace>CanonFix</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <DebugType>none</DebugType>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+
+    <Version Condition="'$(Version)' == ''">0.0.0-local</Version>
+    <Product>CanonFix</Product>
+    <Company>Bvivg</Company>
+    <Copyright>canon-fix</Copyright>
+    <Description>Запускалка Claude Code со скиллом canon-mf460-fix</Description>
+  </PropertyGroup>
+
+  <!-- Сборка на флешку: dotnet publish -c Release -r win-x64 -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
+  <!-- Скилл зашивается в exe как запасная копия на случай отсутствия интернета -->
+  <ItemGroup>
+    <EmbeddedResource Include="../skills/canon-mf460-fix/*" LogicalName="skill/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

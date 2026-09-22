@@ -1,0 +1,29 @@
+# Отчёты и резервные копии с компьютеров — никогда не коммитить
+report_*.md
+report_*.json
+backup/
+launcher.log
+*.reg
+
+# Секреты
+.env
+.env.*
+*.pem
+*.key
+*.token
+secrets*
+.claude/settings.local.json
+
+# .NET
+bin/
+obj/
+out/
+publish/
+*.user
+*.suo
+.vs/
+
+# ОС / редакторы
+.DS_Store
+Thumbs.db
+.idea/
