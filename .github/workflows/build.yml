@@ -20,7 +20,7 @@ jobs:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -58,9 +58,41 @@ jobs:
             echo
             echo "Скачайте CanonFix.exe на флешку и запустите на нужном ПК от администратора. Подробности — в README."
           } > notes.md
+
           gh release delete latest --cleanup-tag --yes || true
-          gh release create latest out/CanonFix.exe \
+          # дождаться, пока GitHub действительно уберёт релиз и тег,
+          # иначе следующий create проходит, а ассет молча теряется
+          for i in $(seq 1 15); do
+            gh release view latest >/dev/null 2>&1 || break
+            sleep 4
+          done
+
+          gh release create latest \
             --target "${SHA}" \
             --title "CanonFix ${VERSION}" \
             --latest \
             --notes-file notes.md
+
+      - name: Приложить exe к релизу
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in 1 2 3; do
+            gh release upload latest out/CanonFix.exe --clobber && break
+            echo "попытка $i не удалась, повтор через 10 с"
+            sleep 10
+          done
+
+      - name: Проверить, что exe лежит в релизе
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          size=$(gh release view latest --json assets \
+                   --jq '[.assets[] | select(.name == "CanonFix.exe")][0].size // 0')
+          echo "CanonFix.exe в релизе latest: ${size} байт"
+          if [ "${size}" -lt 10000000 ]; then
+            echo "::error::CanonFix.exe не попал в релиз latest (размер ${size})"
+            exit 1
+          fi
