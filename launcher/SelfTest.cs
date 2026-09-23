@@ -45,8 +45,14 @@ internal static class SelfTest
         if (files.TryGetValue("reference.md", out var refBytes))
         {
             string reference = Encoding.UTF8.GetString(refBytes);
-            Check(reference.Contains("### П1.", StringComparison.Ordinal) && reference.Contains("### П14.", StringComparison.Ordinal),
-                "reference.md содержит П1…П14");
+            int problems = Regex.Matches(reference, @"^### П\d+\.", RegexOptions.Multiline).Count;
+            Check(problems >= 21, $"reference.md содержит каталог проблем: {problems} записей (ожидается не меньше 21)");
+
+            int scripts = Regex.Matches(reference, @"^### S\d+\.", RegexOptions.Multiline).Count;
+            Check(scripts >= 12, $"reference.md содержит скрипты: {scripts} штук (ожидается не меньше 12)");
+
+            Check(reference.Contains("## 5. Алгоритм: фазы Ф0–Ф10", StringComparison.Ordinal), "reference.md содержит алгоритм по фазам");
+            Check(reference.Contains("## 9. Готово", StringComparison.Ordinal), "reference.md содержит чек-лист «готово»");
         }
 
         Check(Program.RawBase.EndsWith("/" + Program.SkillName + "/", StringComparison.Ordinal), "URL скилла в репозитории собран верно");

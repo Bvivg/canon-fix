@@ -44,7 +44,7 @@ internal static class Launcher
         Step(4, "Скилл " + Program.SkillName, InstallSkill);
         Step(5, "Рабочая папка", () => Log.Info($"  Папки {Program.FixDir} и {Program.BackupDir} готовы. Отчёты и резервные копии будут там."));
 
-        string prompt = Step(6, "Что не работает?", AskSymptom) ?? BuildPrompt("нужна только диагностика. Проведи диагностику по всем уровням, ничего не меняй и сохрани отчёт");
+        string prompt = Step(6, "Что не работает?", AskSymptom) ?? BuildPrompt(DiagnoseOnlyPrompt);
 
         PrintHints();
         Console.Write("Нажмите Enter, чтобы открыть Claude Code… ");
@@ -204,11 +204,11 @@ internal static class Launcher
             string choice = (ReadLineSafe() ?? "").Trim();
             string? symptom = choice switch
             {
-                "1" => "не работает сканер (не сканирует / «сканер не в сети» / «связь не установлена»). Начни с диагностики",
-                "2" => "не работает печать (не печатает, задания висят в очереди или выходят пустые листы). Начни с диагностики",
-                "3" => "не работает ничего — ни печать, ни сканер. Начни с диагностики",
+                "1" => "не работает сканер (не сканирует / «сканер не в сети» / «связь не установлена»)",
+                "2" => "не работает печать (не печатает, задания висят в очереди или выходят пустые листы)",
+                "3" => "не работает ничего — ни печать, ни сканер",
                 "4" => AskFreeText(),
-                "5" => "нужна только диагностика. Проведи диагностику по всем уровням, ничего не меняй и сохрани отчёт",
+                "5" => DiagnoseOnlyPrompt,
                 _ => null,
             };
             if (symptom is null)
@@ -231,11 +231,20 @@ internal static class Launcher
             Console.WriteLine("Пустое описание.");
             return null;
         }
-        return text + ". Начни с диагностики";
+        return text;
     }
 
+    const string DiagnoseOnlyPrompt =
+        "нужна только диагностика, ничего не менять";
+
     static string BuildPrompt(string symptom) =>
-        $"Используй скилл {Program.SkillName}. На этом ПК: {symptom}.";
+        symptom == DiagnoseOnlyPrompt
+            ? $"Используй скилл {Program.SkillName}. Сначала прочитай reference.md целиком. " +
+              "На этом ПК нужна только диагностика: пройди Ф0 и Ф1, ничего не меняй, " +
+              "покажи найденные проблемы с планом правок и сохрани отчёт."
+            : $"Используй скилл {Program.SkillName}. Сначала прочитай reference.md целиком. " +
+              $"На этом ПК: {symptom}. Начни с Ф0 и работай по базе до результата — " +
+              "до полного чек-листа раздела 9.";
 
     /// <summary>Шаг 7. Claude Code в НОВОМ окне консоли, рабочая папка C:\fix. cmd /k — чтобы окно не закрылось при ошибке на старте.</summary>
     static void LaunchClaude(string claudeExe, string prompt)
@@ -264,6 +273,8 @@ internal static class Launcher
         Console.WriteLine($"  Ставит Claude Code и скилл {Program.SkillName}, запускает диагностику");
         Console.WriteLine("==============================================================");
         Console.WriteLine("Нужен интернет (для установки Claude Code и входа в аккаунт).");
+        Console.WriteLine("Запускать под учётной записью того человека, который будет печатать и сканировать");
+        Console.WriteLine("на этом ПК: настройки сканера и принтера по умолчанию пишутся в его профиль.");
         Console.WriteLine();
     }
 
@@ -275,8 +286,10 @@ internal static class Launcher
         Console.WriteLine(" • Если Claude попросит вставить код: скопируйте его в браузере, затем в окне консоли вставьте");
         Console.WriteLine("   ПРАВОЙ кнопкой мыши или Ctrl+V. Код может НЕ отображаться — это нормально. После вставки нажмите Enter.");
         Console.WriteLine(" • На вопрос про доверие к папке C:\\fix («Do you trust the files in this folder?») — Yes / Enter.");
-        Console.WriteLine(" • Дальше Claude сам начнёт диагностику и будет спрашивать разрешение на каждую команду.");
-        Console.WriteLine("   Сначала он только смотрит; менять что-либо будет только после вашего согласия.");
+        Console.WriteLine(" • Дальше Claude прочитает базу и начнёт с диагностики, спрашивая разрешение на каждую команду.");
+        Console.WriteLine("   Сначала он только смотрит; менять что-либо будет после вашего согласия и резервной копии.");
+        Console.WriteLine(" • Будьте рядом: Claude попросит вас проверить кабель, положить лист на стекло или в податчик");
+        Console.WriteLine("   и подтвердить, что напечатанный лист нормальный. Без этого работа не считается законченной.");
         Console.WriteLine($" • Отчёты и резервные копии: {Program.FixDir}. Журнал этой программы: {Program.LogFile}.");
         Console.WriteLine();
     }
