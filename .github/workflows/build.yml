@@ -44,6 +44,7 @@ jobs:
           path: out/CanonFix.exe
 
       - name: Release "latest"
+        id: rel
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -73,6 +74,11 @@ jobs:
             --latest \
             --notes-file notes.md
 
+          # дальше работаем по id: ответы на запрос релиза по тегу
+          # у GitHub бывают устаревшими и показывают релиз без вложений
+          rel_id=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/latest" --jq '.id')
+          echo "release_id=${rel_id}" >> "$GITHUB_OUTPUT"
+
       - name: Приложить exe к релизу
         shell: bash
         env:
@@ -88,11 +94,20 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          REL_ID: ${{ steps.rel.outputs.release_id }}
         run: |
-          size=$(gh release view latest --json assets \
-                   --jq '[.assets[] | select(.name == "CanonFix.exe")][0].size // 0')
+          size=0
+          for i in 1 2 3 4 5; do
+            size=$(gh api "repos/${GITHUB_REPOSITORY}/releases/${REL_ID}/assets" \
+                     --jq '[.[] | select(.name == "CanonFix.exe" and .state == "uploaded")][0].size // 0')
+            [ "${size}" -ge 10000000 ] && break
+            echo "вложение ещё не видно (попытка ${i}), жду 10 с"
+            sleep 10
+          done
           echo "CanonFix.exe в релизе latest: ${size} байт"
           if [ "${size}" -lt 10000000 ]; then
             echo "::error::CanonFix.exe не попал в релиз latest (размер ${size})"
             exit 1
           fi
+          curl -sfIL "https://github.com/${GITHUB_REPOSITORY}/releases/download/latest/CanonFix.exe" \
+            -o /dev/null -w 'ссылка для скачивания отвечает: HTTP %{http_code}\n'
