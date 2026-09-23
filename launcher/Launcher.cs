@@ -194,26 +194,28 @@ internal static class Launcher
         Console.WriteLine("  1 — сканер (не сканирует, «сканер не в сети», «связь не установлена»)");
         Console.WriteLine("  2 — печать (не печатает, задания висят, выходят пустые листы)");
         Console.WriteLine("  3 — ничего не работает (ни печать, ни сканер)");
-        Console.WriteLine("  4 — другое (описать своими словами)");
-        Console.WriteLine("  5 — только диагностика, ничего не менять");
+        Console.WriteLine("  4 — чистая установка: новый ПК, Canon ещё не настраивали");
+        Console.WriteLine("  5 — другое (описать своими словами)");
+        Console.WriteLine("  6 — только диагностика, ничего не менять");
         Console.WriteLine();
 
         while (true)
         {
-            Console.Write("Выбор [1-5]: ");
+            Console.Write("Выбор [1-6]: ");
             string choice = (ReadLineSafe() ?? "").Trim();
             string? symptom = choice switch
             {
                 "1" => "не работает сканер (не сканирует / «сканер не в сети» / «связь не установлена»)",
                 "2" => "не работает печать (не печатает, задания висят в очереди или выходят пустые листы)",
                 "3" => "не работает ничего — ни печать, ни сканер",
-                "4" => AskFreeText(),
-                "5" => DiagnoseOnlyPrompt,
+                "4" => "чистая установка: этот ПК ещё не настраивали, нужно с нуля поднять и печать, и сканирование",
+                "5" => AskFreeText(),
+                "6" => DiagnoseOnlyPrompt,
                 _ => null,
             };
             if (symptom is null)
             {
-                Console.WriteLine("Введите цифру от 1 до 5.");
+                Console.WriteLine("Введите цифру от 1 до 6.");
                 continue;
             }
 

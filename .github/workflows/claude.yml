@@ -1,0 +1,55 @@
+name: claude
+
+# Claude отвечает на упоминание @claude в issue, в комментарии к issue/PR
+# и в комментарии код-ревью. Правит файлы, коммитит и открывает PR.
+# После вливания PR в main workflow build.yml пересобирает CanonFix.exe
+# и обновляет релиз latest.
+#
+# Требуется один раз:
+#   1) установить приложение Claude на репозиторий: https://github.com/apps/claude
+#   2) создать токен командой `claude setup-token` и положить его в секреты
+#      репозитория под именем CLAUDE_CODE_OAUTH_TOKEN
+#      (Settings → Secrets and variables → Actions → New repository secret).
+# Подробнее — в README, раздел «Работа через @claude на GitHub».
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  claude:
+    # Не поднимать раннер на комментариях без @claude
+    if: |
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))) ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude'))
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: false
+
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write      # нужен для штатной авторизации приложения Claude
+      actions: read        # чтобы Claude мог читать результаты сборки
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: --max-turns 40
