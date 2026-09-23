@@ -110,4 +110,4 @@ jobs:
             exit 1
           fi
           curl -sfIL "https://github.com/${GITHUB_REPOSITORY}/releases/download/latest/CanonFix.exe" \
-            -o /dev/null -w 'ссылка для скачивания отвечает: HTTP %{http_code}\n'
+            -o /dev/null -w 'download link: HTTP %{http_code}\n'
