@@ -1,6 +1,6 @@
 # Canon MF460 / MF460 II по USB — единая база и инструкция для Claude
 
-> Версия 1 · собрано 22.09.2026 из восьми файлов выездов (ПК А, Б, В, Г).
+> Версия 2 · 28.09.2026 (добавлены ПК Д, П22, П23) · версия 1 собрана 22.09.2026 из восьми файлов выездов (ПК А, Б, В, Г).
 > Файл самодостаточный: прочитай его **целиком один раз** и дальше работай по нему.
 > Исходные отчёты больше не нужны — всё важное из них перенесено сюда.
 
@@ -25,7 +25,7 @@ Canon i-SENSYS MF46x (MF461dw / MF463dw / MF465dw, серия «II» или бе
 
 1. Разделы 1–4 — правила, контекст, модели, устройство аппарата.
 2. Раздел 5 — алгоритм по фазам Ф0–Ф10. Выполнять по порядку.
-3. Разделы 6–7 — быстрый выбор по симптому и каталог проблем П1–П21.
+3. Разделы 6–7 — быстрый выбор по симптому и каталог проблем П1–П23.
 4. Раздел 8 — готовые скрипты. Раздел 9 — критерий «готово».
 5. Разделы 10–13 — откат, памятка человеку, журнал выездов, как дописывать базу.
 
@@ -60,7 +60,8 @@ Canon i-SENSYS MF46x (MF461dw / MF463dw / MF465dw, серия «II» или бе
 6. **Отключать, а не удалять:** PnP-узлы (`Disable-PnpDevice`), профили ScanGear
    (`AvailableDriver = 0`), выбор в Network Scanner Selector (`Select/Check = 0`).
    Удалять можно только очереди печати на неправильном драйвере или сетевом порту —
-   после экспорта реестра.
+   после экспорта реестра. **Исключение (П23):** USB-очередь, которую создал сам Windows (PnP),
+   не удалять — менять ей драйвер (`Set-Printer -DriverName`), иначе сканер уходит в `PI_00`.
 
 7. **Не сломать работающее.** Если печать или скан уже работают, после каждого шага
    перепроверять их. Не чинить то, что не сломано. На ПК Б порт с формальным
@@ -113,6 +114,7 @@ Canon i-SENSYS MF46x (MF461dw / MF463dw / MF465dw, серия «II» или бе
 | **Б** DESKTOP-OOILP3M | 21.09.2026 | `28DC` · MF460 **II**, серийник `6CF2D8B1AAE3`, также в сети `10.80.10.125` | только скан | Generic Plus UFR II **v3.40**, `CnXP0PP/RAW`, USB006, **Canon Scan Utility** |
 | **В** DESKTOP-E9MGFAO | 21.09.2026 | `28B5` · MF460 Series | печать и скан | Generic Plus UFR II **V290**, `CnXP0PP/RAW`, USB003, **MF Scan Utility 1.21** |
 | **Г** DESKTOP-L7E54AU | 22.09.2026 | `28DC` · MF460 **II** (MF463dw II) | чистая установка | Generic Plus UFR II **v3.50**, USB001, **MF Scan Utility 2.0.3**; скан с податчика **не проверен** |
+| **Д** DESKTOP-JMLIF1J | 28.09.2026 | `28DC` · MF460 **II**, серийник `6CF2D8B14E12` | печать медленная (15–20 с на лист) | П22 + П23: Generic Plus UFR II **V350** на узле USBPRINT и «родной» очереди Windows, USB001, `CnXP0PP/RAW`; **MF Scan Utility 2.0.2.3** / Canon Scan Utility |
 
 Подробности по каждому — в разделе 12.
 
@@ -220,7 +222,7 @@ GUID, которые встретятся:
 ## 5. Алгоритм: фазы Ф0–Ф10
 
 Каждая фаза заканчивается проверкой. Не перешёл проверку — дальше не идти, чинить здесь.
-Скрипты `S1…S12` — в разделе 8.
+Скрипты `S1…S13` — в разделе 8.
 
 ### Ф0. Права и рабочая папка
 
@@ -343,6 +345,9 @@ UFR II есть в `Get-PrinterDriver`.
      родитель по серийнику. Описание порта в `Get-PrinterPort` содержит имя модели.
    - Очереди на **Microsoft IPP Class Driver** (П3), на сетевом порту (П14, П15) и на
      порту чужого устройства (П20) — удалить после S2.
+   - **Но:** USB-очередь этого аппарата, которую создал Windows (у неё есть узел
+     `SWD\PRINTENUM` + `USBPRINT\…`), на IPP- или XPS-классовом драйвере — **не удалять**, а
+     перевести на Generic Plus (`Set-Printer -DriverName`), узел USBPRINT привязать S13 (П22, П23).
    - Если правильной очереди нет — создать (S6), имя вида `Canon MF460 USB (UFR II)`.
      «USB» в имени обязательно, чтобы человек отличал очередь от сетевых.
 3. **Порт (П4).** Сверить `Device Id` и `Device Path` порта с живым `MI_01` (S6, блок
@@ -453,6 +458,9 @@ UFR II есть в `Get-PrinterDriver`.
 | Лист ушёл на чужой аппарат | П15 | Ф7 |
 | Canon-очередь в `PendingDeletion`, порт указывает на устройство другого вендора | П20 | Ф6 |
 | Установщик не запускается, нет прав на порты и драйверы | П16 | Ф0, Ф4 |
+| Всё работает, но каждый лист выходит через 15–20 с; очередь на «Canon Office XPS Class Driver» | П22 | Ф4, Ф6 |
+| После удаления очереди / «Удалить устройство» сканер пропал: `PI_00`, eSCL, очередь на Microsoft IPP, S4 не помогает | П23 | Ф6 |
+| `PrintTestPage` через WMI → событие 310 (задание удалено), лист не выходит, а из Блокнота печать идёт | не поломка — см. S6 | Ф6 |
 
 ---
 
@@ -490,6 +498,8 @@ Read. Сразу после S4 узел может остаться с имен�
 а призрак исчезает.
 
 **Грабли:** без профилактики USB (S9) поломка возвращается при следующем переподключении.
+Если S4 не помогает (hardware ID узла `…&PI_00`, а `mfscn` знает только `…&MI_00`) и узел
+USBPRINT стоит на Microsoft IPP Class Driver — это П23 (уточнено 28.09.2026, ПК Д).
 
 ---
 
@@ -571,6 +581,9 @@ Instance ID живого `MI_01`, а `Device Path` — к символьной �
 - при живом П1 правка порта сама по себе печать **не поднимает** (П12). Сначала П1;
 - если печать уже идёт (ПК Б: Dynamic Print Monitor, описание корректное),
   формальное расхождение не трогать.
+- `Device Path` на `{f2f40381-…}` (IPP-USB) вместо `{28d78fad-…}` Windows 11 ставит **сама при каждом
+  переподключении**; Generic Plus V350 с ним печатает нормально (ПК Д). Сам по себе это не П4 —
+  не править (уточнено 28.09.2026, ПК Д).
 
 ---
 
@@ -846,6 +859,8 @@ Remove-PrinterPort -Name 'IP_10.80.10.125'            # если больше н
 ### П17. Скан через податчик (АПД) — пустой PDF
 
 **Где:** ПК Г. **ОТКРЫТО: на ПК Г не дорешено**, при следующем визите проверить первым делом.
+На ПК Д (28.09.2026, MF460 II, MF Scan Utility 2.0.2.3) податчик с листом **текстом вверх,
+верхним краем вперёд** при методе «Автоматический» дал нормальный PDF — ориентация подтверждена.
 
 **Суть:** MF Scan Utility → «Документ», настройки правильные: источник «Автоматический»,
 многостраничный PDF, цвет, A4, 300 dpi. Первый PDF с податчика вышел пустым.
@@ -923,6 +938,81 @@ UFR II v3.50 + ScanGear MF 11.3 + MF Scan Utility 2.0.3 (раздел 3).
 Должны появиться сканер `Canon MF460 … Series` и «Поддержка USB принтера».
 
 **Правило:** пока устройства нет, **не** искать его в сети (П15). Дальше — П10, П7.
+
+---
+
+### П22. Очередь на «Canon Office XPS Class Driver» — печать работает, но медленно
+
+**Где:** ПК Д (DESKTOP-JMLIF1J), 28.09.2026, `PID_28DC`.
+
+**Суть:** Windows сама создала очередь `Canon MF460 II Series UFR II` на встроенном классовом
+драйвере **Canon Office XPS Class Driver** (`prncacl1.inf`, 2009 г., v4, процессор `MS_XPS_PROC`).
+Узел печати `USBPRINT\CanonMF460_II_Series508A` цепляется к нему по совместимому ID
+`1284_CID_CA_XPS_OIP`, потому что в установленном **Generic Plus UFR II V340** нет ID модели II
+(там только `USBPRINT\CanonMF460_Series_UF19DD` — без II). Аппарат получает тяжёлый XPS-поток
+и долго его разбирает. Компьютер отдаёт задание за секунду — «висит» уже аппарат.
+
+**Признаки:**
+- `Get-Printer` → `DriverName = Canon Office XPS Class Driver`;
+- событие 842: print processor `MS_XPS_PROC`; событие 307: пробная страница **~227 КБ**
+  (через UFR II — 5–48 КБ);
+- в журнале всё за 1 с, а лист выходит через 15–20 с;
+- у узла `USBPRINT\…` `DriverInfPath` = `prncacl1.inf`;
+- в ключе очереди `Status = 384` (сама печать при этом идёт).
+
+**Лечение (порядок важен, см. П23):**
+1. Официальный **GPlus_UFRII_Driver_V350_W64_00.exe** (раздел 3), подпись проверить. Распаковать
+   `tar -xf`; внутри `Driver\CNLB0MA64.INF` (имя «Canon Generic Plus UFR II») и `etc\CNLB0MA64.INF`
+   (имя «Canon Generic Plus UFR II V350»). На ПК Д ставили `etc\`:
+   `pnputil /add-driver <etc\CNLB0MA64.INF> /install` → `Add-PrinterDriver 'Canon Generic Plus UFR II V350'`.
+   Проверить, что INF содержит `USBPRINT\CanonMF460_II_Series508A` (для `28DC`).
+2. Узел USBPRINT перепривязать к V350 (если `/install` не сделал этого сам — S13).
+3. **Не удалять** очередь, созданную Windows. Перевести её на V350 и переименовать:
+   `Set-Printer -Name '<очередь>' -DriverName 'Canon Generic Plus UFR II V350'`,
+   `Rename-Printer … -NewName 'Canon MF460 II USB (UFR II)'`, по умолчанию (S6).
+   Если перед этим создавали отдельную очередь S6 — удалить **её**, а не родную.
+
+**Проверка:** человек засёк время: лист из Блокнота и пробная страница выходят за 2–5 с,
+нормальные. S10 → очередь осталась одна, на V350; XPS-очередь не появилась.
+
+**Грабли:** удаление XPS-очереди «в лоб» → П23. `Remove-Printer` на v3-очереди Canon может
+зависнуть — `Restart-Service Spooler`, потом повторить (запускать с таймаутом, `Start-Job`).
+
+---
+
+### П23. Удалили «родную» очередь → Windows ставит Microsoft IPP, аппарат уходит в IPP-over-USB, сканер становится `PI_00`
+
+**Где:** ПК Д, 28.09.2026 (спровоцировал Claude при лечении П22). Похоже на то, что на ПК А/Б/В
+описано как П1, и объясняет его. Совпадает с известной проблемой Microsoft
+«USB IPP Multifunction Printer Drivers Fail in Windows 11» (KB5079473 и новее):
+https://learn.microsoft.com/en-us/troubleshoot/windows-hardware/drivers/known-issues-third-party-drivers
+
+**Суть:** очередь, которую создал PnP, связана с узлом `USBPRINT\…`. `Remove-Printer` такой очереди
+(и «Удалить устройство» в Параметрах) **удаляет узел**. При следующем переподключении узел ставится
+заново, и первым hardware ID у него идёт **`1284_CID_MS_IPP_PREF`** (аппарат просит IPP) — Windows
+выбирает **Microsoft IPP Class Driver** (`prnms012.inf`) и переводит аппарат в режим IPP-over-USB.
+Тогда интерфейс сканера (`Class_07/01/04`) энумерируется как `…&PI_00` на `usbprint`, `mfscn` его
+не берёт (в INF только `…&MI_00`), скан уходит в `SWD\ESCLUSB` (П11), появляется IPP-очередь (П3).
+Пока узел USBPRINT привязан к драйверу Canon (XPS-классовому или Generic Plus), Windows его
+не перепривязывает, и интерфейс приходит как `MI_00`.
+
+**Признаки:**
+- в Kernel-PnP/Configuration: `420 … USBPRINT\… was deleted`, затем `400 … configured. Driver Name: prnms012.inf`;
+- `DEVPKEY_Device_HardwareIds` узла USBPRINT начинается с `1284_CID_MS_IPP_PREF`;
+- `PI_00` с hardware ID `USB\VID_04A9&PID_28DC&PI_00` (без `MI_`), служба `usbprint`;
+- **S4 не помогает**, S10 и физическое переподключение — тоже, `pnputil /remove-device` узла `PI_00` — тоже.
+
+**Лечение:**
+1. S13 — принудительно привязать узел USBPRINT к Generic Plus V350 (с ID модели II).
+2. Очередь, которую Windows пересоздала на Microsoft IPP, **не удалять**: `Set-Printer -DriverName`
+   на V350, переименовать, по умолчанию (как в П22, п. 3).
+3. S10 → `MI_00` (Image, usbscan, `mfscn`) вернулся, в WIA `{6BDD1FC6-…}`, eSCL исчез.
+
+**Проверка:** ещё 1–2 цикла S10 — всё поднимается само: `MI_00`, одна очередь на V350,
+узел USBPRINT на V350. Скан через программу Canon + WIA открыты через Read.
+
+**Правило:** на Windows 11 26100/26200 **никогда не удалять очередь, созданную PnP** для USB-Canon, —
+только менять ей драйвер. Удалять можно только очереди, созданные вручную (`Add-Printer`).
 
 ---
 
@@ -1235,6 +1325,15 @@ Get-Printer -Name $q.Name | Select-Object Name, PrinterStatus
 
 Затем спросить человека, вышел ли **нормальный** лист. Пустой лист с полосами — П3.
 
+**Если `PrintTestPage` через WMI на очереди Generic Plus даёт только `800 → 310` (задание удалено,
+лист не вышел)** — это не поломка: v3-драйвер Canon не печатает из служебного сеанса WMI (ПК Д).
+Печатать пробную страницу в сеансе пользователя:
+`rundll32 printui.dll,PrintUIEntry /k /n "<очередь>"` или `notepad /pt <файл> "<очередь>"`.
+Одно лишнее задание `310` перед каждым настоящим — служебный запрос драйвера Canon, норма.
+
+Для жалобы «медленно» замерять: время события 307 и размер (`Size in bytes`) + время выхода листа
+со слов человека. XPS/IPP-поток ~230 КБ и 15–20 с → П22; UFR II — 5–50 КБ и 2–5 с.
+
 ### S7. Программа сканирования: выбор, профили, ярлык
 
 ```powershell
@@ -1434,6 +1533,31 @@ wevtutil sl Microsoft-Windows-PrintService/Operational /e:false
 | 307 | драйвер, порт, размер в байтах, число страниц. **Не доказывает**, что лист нормальный |
 | ошибка `0x20` про `CnXP0PP` | П5 |
 
+### S13. Принудительно привязать узел USBPRINT к драйверу Canon (П22, П23)
+
+```powershell
+Add-Type -TypeDefinition @'
+using System; using System.Runtime.InteropServices;
+public static class NewDev {
+  [DllImport("newdev.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+  public static extern bool UpdateDriverForPlugAndPlayDevicesW(IntPtr hwnd, string hwid, string inf, uint flags, out bool reboot);
+}
+'@
+# INF from DriverStore of Generic Plus that contains the model's ID (V350 for 28DC)
+$inf  = (Get-PrinterDriver -Name 'Canon Generic Plus UFR II V350').InfPath
+$hwid = 'USBPRINT\CanonMF460_II_Series508A'   # take from DEVPKEY_Device_HardwareIds of the USBPRINT node
+$reboot = $false
+[NewDev]::UpdateDriverForPlugAndPlayDevicesW([IntPtr]::Zero, $hwid, $inf, 1, [ref]$reboot)   # 1 = INSTALLFLAG_FORCE
+Get-PnpDevice -PresentOnly | Where-Object InstanceId -like 'USBPRINT\CANON*' |
+  ForEach-Object { (Get-PnpDeviceProperty -InstanceId $_.InstanceId -KeyName DEVPKEY_Device_DriverDesc).Data }
+```
+
+Ожидаемо: `Canon Generic Plus UFR II V350`. Затем П22/П23 п. 3 (драйвер очереди) и S10.
+
+**Долгие скрипты** (S10, правка очередей) запускать с таймаутом:
+`Start-Process powershell.exe -ArgumentList '-File',<скрипт> -RedirectStandardOutput <txt> -PassThru` +
+`WaitForExit(150000)` — `Remove-Printer` иногда виснет навсегда (ПК Д).
+
 ---
 
 ## 9. Готово = все пункты отмечены
@@ -1594,9 +1718,28 @@ wevtutil sl Microsoft-Windows-PrintService/Operational /e:false
 
 ---
 
+### ПК Д — DESKTOP-JMLIF1J · 28.09.2026 · `PID_28DC` (MF460 II), серийник `6CF2D8B14E12`
+
+- **Было:** «всё работает, но печать очень долгая»: лист выходил через 15–20 с. Скан работал
+  (`MI_00`, `oem40.inf`, WIA Canon), ScanGear и сеть чистые.
+- **Причины:** П22 (очередь на Canon Office XPS Class Driver; установленный Generic Plus V340 не знает
+  ID модели II). При лечении Claude удалил PnP-очередь → **П23** (узел USBPRINT переустановился на
+  Microsoft IPP, `PI_00`, eSCL, IPP-очередь; S4, S10, физическое переподключение не помогали).
+- **Сделано:** S2 (точка №15); официальный GPlus UFR II **V350** (`etc\CNLB0MA64.INF` → `oem143.inf`);
+  S13 — узел USBPRINT принудительно на V350; PnP-очередь переведена на V350, переименована в
+  `Canon MF460 II USB (UFR II)`, по умолчанию, `LegacyDefaultPrinterMode = 1`; ручная очередь удалена
+  (через перезапуск спулера); S9; ярлык «Canon Scan»; человек закрепил Canon Scan Utility.
+- **Итог:** пробная страница 48 КБ, текст 5 КБ, листы за 2–5 с (подтверждено). WIA 2481×3507,
+  MF Scan Utility 2.0.2.3 — стекло и **податчик** читаются. 3× S10 + физическое переподключение —
+  в финале всё поднимается само.
+- **Осталось:** драйвер V340 и `prncacl1.inf` в системе (не используются); `Device Path` USB001 на
+  `{f2f40381}` — Windows ставит сама, печать не страдает; призрак `PI_00`.
+
+---
+
 ## 13. Как дописывать базу и писать отчёт
 
-**Новая проблема** → следующий номер (П22, П23, …), в том же формате:
+**Новая проблема** → следующий номер (П24, П25, …), в том же формате:
 
 ```
 ### П<N>. <коротко суть>
